@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jstemmer/go-junit-report/pkg/gtop"
 	"github.com/jstemmer/go-junit-report/pkg/gtr"
+	"github.com/jstemmer/go-junit-report/pkg/parser/gotest"
 )
 
 var (
@@ -28,7 +28,7 @@ func main() {
 	}
 
 	// Read input
-	events, err := gtop.Parse(os.Stdin)
+	events, err := gotest.Parse(os.Stdin)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error reading input: %s\n", err)
 		os.Exit(1)

@@ -1,4 +1,4 @@
-package gtop
+package gotest
 
 import (
 	"os"
@@ -10,7 +10,7 @@ import (
 	"github.com/jstemmer/go-junit-report/pkg/gtr"
 )
 
-const testdataRoot = "../../testdata/"
+const testdataRoot = "../../../testdata/"
 
 var tests = []struct {
 	in       string

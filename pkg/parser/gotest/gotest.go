@@ -1,5 +1,5 @@
-// Package gtop is a standard Go test output parser.
-package gtop
+// Package gotest is a standard Go test output parser.
+package gotest
 
 import (
 	"bufio"
