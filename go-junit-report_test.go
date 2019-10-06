@@ -9,6 +9,7 @@ import (
 	"os"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -1619,7 +1620,13 @@ func modifyForBackwardsCompat(testsuites junit.Testsuites) junit.Testsuites {
 	for i, suite := range testsuites.Suites {
 		testsuites.Tests += suite.Tests
 		testsuites.Failures += suite.Failures
+
+		if covIdx, covProp := getProperty("coverage.statements.pct", suite.Properties); covIdx > -1 {
+			pct, _ := strconv.ParseFloat(covProp.Value, 64)
+			testsuites.Suites[i].Properties[covIdx].Value = fmt.Sprintf("%.2f", pct)
+		}
 		testsuites.Suites[i].Properties = dropProperty("go.version", suite.Properties)
+
 		for j := range suite.Testcases {
 			testsuites.Suites[i].Testcases[j].Classname = suite.Name
 		}
@@ -1635,6 +1642,15 @@ func dropProperty(name string, properties []junit.Property) []junit.Property {
 		}
 	}
 	return props
+}
+
+func getProperty(name string, properties []junit.Property) (int, junit.Property) {
+	for i, prop := range properties {
+		if prop.Name == name {
+			return i, prop
+		}
+	}
+	return -1, junit.Property{}
 }
 
 func toXML(testsuites junit.Testsuites) (string, error) {
