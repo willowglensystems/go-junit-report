@@ -1,12 +1,13 @@
 package main
 
 import (
+	"encoding/xml"
 	"flag"
 	"fmt"
 	"os"
 
-	"github.com/jstemmer/go-junit-report/formatter"
-	"github.com/jstemmer/go-junit-report/parser"
+	"github.com/jstemmer/go-junit-report/pkg/gtop"
+	"github.com/jstemmer/go-junit-report/pkg/gtr"
 )
 
 var (
@@ -14,6 +15,7 @@ var (
 	packageName   = flag.String("package-name", "", "specify a package name (compiled test have no package name in output)")
 	goVersionFlag = flag.String("go-version", "", "specify the value to use for the go.version property in the generated XML")
 	setExitCode   = flag.Bool("set-exit-code", false, "set exit code to 1 if tests failed")
+	printEvents = flag.Bool("print-events", false, "print events (for debugging)")
 )
 
 func main() {
@@ -26,20 +28,39 @@ func main() {
 	}
 
 	// Read input
-	report, err := parser.Parse(os.Stdin, *packageName)
+	events, err := gtop.Parse(os.Stdin)
 	if err != nil {
-		fmt.Printf("Error reading input: %s\n", err)
+		fmt.Fprintf(os.Stderr, "Error reading input: %s\n", err)
 		os.Exit(1)
 	}
 
-	// Write xml
-	err = formatter.JUnitReportXML(report, *noXMLHeader, *goVersionFlag, os.Stdout)
-	if err != nil {
-		fmt.Printf("Error writing XML: %s\n", err)
-		os.Exit(1)
+	if *printEvents {
+		for i, ev := range events {
+			fmt.Printf("%02d: %#v\n", i, ev)
+		}
+	}
+	report := gtr.FromEvents(events)
+
+	if !*noXMLHeader {
+		fmt.Fprintf(os.Stdout, xml.Header)
 	}
 
-	if *setExitCode && report.Failures() > 0 {
+	// TODO: write xml header?
+	enc := xml.NewEncoder(os.Stdout)
+	enc.Indent("", "\t")
+	if err := enc.Encode(gtr.JUnit(report)); err != nil {
+		fmt.Fprintf(os.Stderr, "Error writing XML: %s\n", err)
+		os.Exit(1)
+	}
+	if err := enc.Flush(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error flusing XML: %s\n", err)
+		os.Exit(1)
+	}
+	fmt.Fprintf(os.Stdout, "\n")
+
+	if *setExitCode && report.HasFailures() {
 		os.Exit(1)
 	}
 }
+
+// TODO: read/write + test
